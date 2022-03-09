@@ -6,14 +6,11 @@ import arbre2 from '../img/arbre2.png'
 import dino from '../img/dino.png'
 import dinocourtdroite from '../img/dinocourtdroite.png'
 import dinocourtgauche from '../img/dinocourtgauche.png'
-import pompier from '../img/pompier.png'
-import feu from '../img/boulefeu.png'
-
+/*import pompier from '../img/pompier.png'*/
 
 
 
 console.log(platforme)
-console.log(pompier)
 
 
 const canvas = document.querySelector('canvas')
@@ -28,7 +25,7 @@ class Joueur {
     constructor() {
         this.position = {
             x: 100,
-            y: 298
+            y: 100
         }
         this.rapide = {  // rapidité à la quelle l'objet tombe
             x: 0,
@@ -91,6 +88,35 @@ class Joueur {
     }
 }
 
+/*POMPIER*/
+var dx = 50;
+var dy = 0;
+class Pompier {
+    constructor(x, y, radius, color, rapide) {
+        this.x = x
+        this.y = y
+        this.radius = radius
+        this.color = color
+        this.rapide = rapide
+    }
+
+    draw() {
+        c.beginPath()
+        c.arc(this.x, this.y, this.radius, 0, Math.PI*2,
+            false)
+        c.fillStyle  = this.color
+        c.fill()
+
+    }
+
+    update() {
+        this.draw()
+        c.restore()
+        this.x +=this.rapide.x
+        this.y +=this.rapide.y
+    }
+}
+
 class Platforme {
     constructor({x, y, image}) {
        this.position = {
@@ -108,41 +134,6 @@ class Platforme {
     }
 }
 
-/**** ENNEMIES Pompiers****/
-class Pompier {
-    constructor({x, y, image}) {
-       this.position = {
-           x,
-           y
-       } 
-
-       this.image = image
-       this.width = image.width     /*les pompiers prendront la taille de l'image*/
-       this.height = image.height
-
-    } 
-    draw(){
-        c.drawImage(this.image, this.position.x, this.position.y)
-    }
-}
-
-class Feu {
-    constructor({x, y, image}) {
-        this.position = {
-            x,
-            y
-        } 
- 
-        this.image = image
-        this.width = image.width     /*les pompiers prendront la taille de l'image*/
-        this.height = image.height
- 
-     } 
-     draw(){
-         c.drawImage(this.image, this.position.x, this.position.y)
-     }
-
-}
 
 class Generique {
     constructor({x, y, image}) {
@@ -168,22 +159,25 @@ function createImage(imageSrc) {
 }
 
 let platformeImage = createImage(platforme)
-let pompierImage = createImage(pompier)
 
 let joueur = new Joueur()
 let platformes = []
 let generique = []
-let pompiers = []
-let feux = []
-var nb = platformeImage.width - 25;
-var ff = joueur.position.x
-var fois = 0
-
-let isforward = true
-let present = true
-var nbdevant = nb  +15
-var nbderriere = nb -15
+let enemies = []
+/*let pompiers = [
+    new Pompier({
+        position: {
+            x: 550,
+            y: 400
+        },
+        rapide: {
+            x: 0,
+            y: 0
+        }
+    })
+]*/
 let currentKey
+
 const keys = {
     droite: {
         pressed: false
@@ -191,46 +185,26 @@ const keys = {
     gauche: {
         pressed: false
     }
-} 
-/*setInterval(dessinePompier, 2000);*/
-function dessinePompier() {     /*permet de faire l'animation de l'ennemi pompier */
-    pompierImage = createImage(pompier)
-
-    pompiers = [new Pompier({x: nb, y: 356, image: (pompierImage)})
-        ]
-        if (nb < platformeImage.width*2 -60 && isforward==true){
-            nb = nb + 3;
-            //nbdevant = nb + 15
-            //nbderriere = nb-15
-        }
-
-        else {
-            isforward = false
-            if(nb <= platformeImage.width- 25) {
-                isforward =true
-            }
-            nb = nb -3
-            //nbderriere = nb - 15
-            //nbdevant= nb+15
-
-
-    }
 }
 
-function bouleFeu(){
-    feux = [new Feu({x: ff+50, y: 200, image: createImage(feu)})]
-    if (ff<300 && present == true){
-        ff = ff + 3;
-    }
-    else{
-        present == false
-        delete feux[0];
-        present == true
-    }
-}
 
 let scrollOffset = 0 
 
+function enemiesPompiers(){
+    
+    setInterval(() => {
+        const x = 600  /*où il commence */
+        const y = 400
+        const radius = 30
+        const color = 'red'
+        const rapide = {
+            x: 3,    /*avancement à droite*/
+            y: 0    /*vers où il avance, (ici horizontal)*/
+        }
+        enemies.push(new Pompier(x, y, radius, color, rapide))
+        console.log(enemies);
+    }, 0 /*rapidité à la quelles ils vont*/)
+}
 function init(){
     platformeImage = createImage(platforme)
     
@@ -243,7 +217,6 @@ function init(){
         
         ]
 
-    setInterval(dessinePompier, 50)
 
     generique = [
         new Generique({x: 0, y:0, image: createImage(fond)}),
@@ -259,21 +232,16 @@ function animate() {
     requestAnimationFrame(animate)
     c.fillStyle = 'white' /*afin de voir la partie "jouable"*/
     c.fillRect(0,0, canvas.width, canvas.height) // permet à ce que l'objet tombe et ne "coule" pas
-    
     generique.forEach(generique => {
         generique.draw()
     })
-    
+
     platformes.forEach((platforme) => {
         platforme.draw()
     })
 
-    pompiers.forEach((pompier) => {
-        pompier.draw()
-    })
-
-    feux.forEach((feu) => {
-        feu.draw()
+    enemies.forEach((pompier) => {
+        pompier.update()
     })
 
     joueur.update() /*placé ici afin que le joueur soit devant la plateforme et non caché dedrrière */
@@ -291,9 +259,7 @@ function animate() {
             platformes.forEach((platforme) => {
                 platforme.position.x -= 5
             })
-            pompiers.forEach((pompier) => {
-                pompier.position.x -= 5
-            })
+
             generique.forEach((generique) => {
                 generique.position.x -= 3   /*le fond bouge en même temps vers la gauche quand j'avance à droite*/
             })
@@ -303,9 +269,7 @@ function animate() {
             platformes.forEach((platforme) => {
                 platforme.position.x += 5
             })
-            pompiers.forEach((pompier) => {
-                pompier.position.x += 5
-            })
+            
             generique.forEach((generique) => { /*fonc qui bouge de l'autre côte quand je recule*/
                 generique.position.x += 3
             })
@@ -324,14 +288,6 @@ function animate() {
         }
     })
 
-    pompiers.forEach((pompier) => {
-        if (joueur.position.x + joueur.width >= pompier.position.x + 50
-            && joueur.position.x <= pompier.position.x + pompier.width && joueur.position.y >= 300 )
-        {
-            console.log('mort')
-            init()
-        }
-    })
 
      /*switch des sprites*/
     if (
@@ -375,6 +331,7 @@ function animate() {
 
     /*perdre*/
 
+
     if (joueur.position.y > canvas.clientHeight) {
         console.log("perdu")
         init() /* permet de reset le jeu dès que le joueur tombe "sous le canvas"*/
@@ -383,6 +340,8 @@ function animate() {
 
 init()
 animate()
+enemiesPompiers()
+
 addEventListener('keydown', ({ keyCode}) => {  //si on appue sur une de ces touches, le personnage se déplace
     console.log(keyCode)
     if (keys.gauche.pressed || keys.droite.pressed) {
@@ -410,18 +369,6 @@ addEventListener('keydown', ({ keyCode}) => {  //si on appue sur une de ces touc
         case 40:
             console.log('bas')
             break
-        
-        /*feu*/
-        case 32:
-            console.log('feu')
-            fois++
-            if (present == true){
-                setInterval(bouleFeu, 50)
-            }
-            else { 
-                
-                }
-            break
     }
 }
 
@@ -445,9 +392,6 @@ addEventListener('keyup', ({ keyCode}) => {
             break
         case 40:
             console.log('bas')
-            break
-        
-        case 32:
             break
     }
     console.log(keys.droite.pressed)
